@@ -1,0 +1,96 @@
+Rezolva in PL/SQL subiectul urmator:
+Exemplu de subiect:
+- cerere: găsiți salariul mediu pentru fiecare locație al angajaților cu nume de lungime minim 5 care au fost angajați în luna ianuarie, cu condiția ca suma salariilor din acea locație să fie strict mai mare decât decât suma cea mai mică dintre toate locațiile
+- parcurgeți cererea cu colecții
+- parcurgeți cererea cu cursoare
+- parametrizați cererea (acel 5 și luna ianuarie) și mutați codul într-un subprogram, apoi apelați subprogramul cu 2 valori diferite
+- scrieți un trigger care să nu permită actualizarea departamentului pentru un angajat dacă prima literă din noua locație coincide cu a doua literă din adresa de mail a angajatului
+
+SELECT location, AVG(salary) AS avg_salary
+FROM employees
+WHERE length(name) >= 5 AND hiredate >= TO_DATE('01-JAN-2021', 'DD-MON-YYYY')
+GROUP BY location
+HAVING SUM(salary) > (SELECT MIN(SUM(salary)) FROM employees GROUP BY location);
+
+FOR rec IN (SELECT location, AVG(salary) AS avg_salary
+            FROM employees
+            WHERE length(name) >= 5 AND hiredate >= TO_DATE('01-JAN-2021', 'DD-MON-YYYY')
+            GROUP BY location
+            HAVING SUM(salary) > (SELECT MIN(SUM(salary)) FROM employees GROUP BY location))
+LOOP
+  -- Procesează datele pentru fiecare înregistrare din rezultatul declarației SELECT
+  -- Exemplu: afișează locația și salariul mediu pentru fiecare înregistrare
+  DBMS_OUTPUT.PUT_LINE('Location: ' || rec.location || ', Average salary: ' || rec.avg_salary);
+END LOOP;
+
+DECLARE
+  -- Declară cursorul
+  CURSOR cur IS
+    SELECT location, AVG(salary) AS avg_salary
+    FROM employees
+    WHERE length(name) >= 5 AND hiredate >= TO_DATE('01-JAN-2021', 'DD-MON-YYYY')
+    GROUP BY location
+    HAVING SUM(salary) > (SELECT MIN(SUM(salary)) FROM employees GROUP BY location);
+  -- Declară variabila pentru înregistrare
+  rec employees%ROWTYPE;
+BEGIN
+  -- Deschide cursorul
+  OPEN cur;
+  -- Parcurge rezultatele obținute de cursor
+  LOOP
+    -- Citeste o înregistrare din cursor
+    FETCH cur INTO rec;
+    -- Ieși din ciclu dacă nu mai sunt înregistrări de procesat
+    EXIT WHEN cur%NOTFOUND;
+    -- Procesează datele pentru înregistrarea curentă
+    -- Exemplu: afișează locația și salariul mediu pentru înregistrarea curentă
+    DBMS_OUTPUT.PUT_LINE('Location: ' || rec.location || ', Average salary: ' || rec.avg_salary);
+  END LOOP;
+  -- Închide cursorul
+  CLOSE cur;
+END;
+
+CREATE OR REPLACE PROCEDURE find_avg_salary (min_name_length IN NUMBER, start_date IN DATE)
+AS
+  -- Declară cursorul
+  CURSOR cur IS
+    SELECT location, AVG(salary) AS avg_salary
+    FROM employees
+    WHERE length(name) >= min_name_length AND hiredate >= start_date
+    GROUP BY location
+    HAVING SUM(salary) > (SELECT MIN(SUM(salary)) FROM employees GROUP BY location);
+  -- Declară variabila pentru înregistrare
+  rec employees%ROWTYPE;
+BEGIN
+  -- Deschide cursorul
+  OPEN cur;
+  -- Parcurge rezultatele obținute de cursor
+  LOOP
+    -- Citeste o înregistrare din cursor
+    FETCH cur INTO rec;
+    -- Ieși din ciclu dacă nu mai sunt înregistrări de procesat
+    EXIT WHEN cur%NOTFOUND;
+    -- Procesează datele pentru înregistrarea curentă
+    -- Exemplu: afișează locația și salariul mediu pentru înregistrarea curentă
+    DBMS_OUTPUT.PUT_LINE('Location: ' || rec.location || ', Average salary: ' || rec.avg_salary);
+  END LOOP;
+  -- Închide cursorul
+  CLOSE cur;
+END;
+
+EXECUTE find_avg_salary(6, TO_DATE('01-FEB-2021', 'DD-MON-YYYY'));
+EXECUTE find_avg_salary(4, TO_DATE('01-JAN-2021', 'DD-MON-YYYY'));
+
+valoarea mediana a salariului pt fiecare job_title pt angajatii care au in first name litera e
+primele 5 rez din response
+
+
+CREATE TRIGGER verificare_sold
+BEFORE UPDATE ON tabel
+FOR EACH ROW
+BEGIN
+ IF NEW.sold > 2000 THEN
+ SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numele și prenumele nu pot fi modificate
+pentru persoane cu soldul mai mare de 2000';
+ END IF;
+END;
